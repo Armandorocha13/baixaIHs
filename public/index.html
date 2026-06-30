@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Logs de Consumo</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- HEADER BAR -->
+    <header class="dashboard-header card">
+      <div class="header-logo-section">
+        <img src="/logo.png" alt="FFA Logo" class="logo-ffa">
+        <span class="logo-separator">/</span>
+        <img src="/logoIhs.png" alt="IHS Logo" class="logo-ihs">
+      </div>
+      <h1 class="header-title">DASHBOARD DE LOGS DE CONSUMO</h1>
+    </header>
+
+    <!-- FILTER BAR -->
+    <section class="filter-section card">
+      <div class="filter-group">
+        <label class="filter-label">CIDADE</label>
+        <div class="btn-toggle-group" id="city-filter-group">
+          <button class="btn-toggle active" data-value="all">Todos</button>
+          <button class="btn-toggle" data-value="rj">RJ</button>
+          <button class="btn-toggle" data-value="sp">SP</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label for="start-date" class="filter-label">DATA INICIAL</label>
+        <div class="input-date-wrapper">
+          <input type="date" id="start-date" class="input-date">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label for="end-date" class="filter-label">DATA FINAL</label>
+        <div class="input-date-wrapper">
+          <input type="date" id="end-date" class="input-date">
+        </div>
+      </div>
+
+      <div class="filter-group flex-grow">
+        <label for="search-input" class="filter-label">BUSCAR REGISTRO</label>
+        <div class="input-search-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" class="input-search" placeholder="Buscar por OS, Matrícula, Material ou Serial...">
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button id="btn-clear-filters" class="btn btn-secondary">
+          <i class="fa-solid fa-filter-circle-xmark"></i> Limpar Filtros
+        </button>
+        <button id="btn-import-excel" class="btn btn-dark">
+          <i class="fa-solid fa-file-import"></i> Importar Planilha
+        </button>
+        <!-- Hidden file input -->
+        <input type="file" id="file-uploader" accept=".xlsx, .xls" style="display: none;">
+      </div>
+    </section>
+
+    <!-- KPI CARDS GRID -->
+    <section class="kpi-grid">
+      <!-- Total Records -->
+      <div class="kpi-card card">
+        <div class="kpi-content">
+          <span class="kpi-label">TOTAL DE REGISTROS</span>
+          <span class="kpi-value" id="kpi-total">0</span>
+        </div>
+        <div class="kpi-icon-wrapper bg-blue">
+          <i class="fa-solid fa-list-check kpi-icon text-blue"></i>
+        </div>
+      </div>
+
+      <!-- Successes -->
+      <div class="kpi-card card">
+        <div class="kpi-content">
+          <span class="kpi-label">TOTAL DE SUCESSOS</span>
+          <span class="kpi-value" id="kpi-successes">0</span>
+        </div>
+        <div class="kpi-icon-wrapper bg-green">
+          <i class="fa-solid fa-circle-check kpi-icon text-green"></i>
+        </div>
+      </div>
+
+
+
+      <!-- Success Rate -->
+      <div class="kpi-card card">
+        <div class="kpi-content">
+          <span class="kpi-label">TAXA DE SUCESSO</span>
+          <span class="kpi-value" id="kpi-rate">0.0%</span>
+        </div>
+        <div class="kpi-icon-wrapper bg-purple">
+          <i class="fa-solid fa-percent kpi-icon text-purple"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARTS GRID -->
+    <section class="charts-grid">
+      <!-- Comparative Chart RJ vs SP -->
+      <div class="chart-card card">
+        <h3 class="chart-title">
+          <i class="fa-solid fa-chart-bar"></i> Comparativo Diário de Importações: RJ × SP
+        </h3>
+        <div class="chart-container">
+          <canvas id="chart-rj-sp-comparison"></canvas>
+        </div>
+      </div>
+
+      <!-- Daily Status Evolution -->
+      <div class="chart-card card">
+        <h3 class="chart-title">
+          <i class="fa-solid fa-chart-line"></i> Evolução Diária de Status
+        </h3>
+        <div class="chart-container">
+          <canvas id="chart-daily-evolution"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA TABLE SECTION -->
+    <section class="table-section card">
+      <div class="table-header">
+        <h2 class="table-title">
+          <i class="fa-solid fa-table"></i> Detalhes dos Logs de Consumo
+        </h2>
+        <div class="table-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button id="btn-send-email" class="btn btn-dark">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Relatório
+          </button>
+          <button id="btn-export-csv" class="btn btn-dark">
+            <i class="fa-solid fa-file-csv"></i> Exportar Visão Atual
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>NÚMERO OS</th>
+              <th>CLIENTE</th>
+              <th>DATA EXECUÇÃO</th>
+              <th>EQUIPE (MATRÍCULA)</th>
+              <th>MATERIAL</th>
+              <th>CODCPL</th>
+              <th>QTD. APLIC</th>
+              <th>QTD. REMOV</th>
+              <th>ABA / ORIGEM</th>
+              <th>MOTIVO / RETORNO</th>
+              <th>STATUS</th>
+              <th>UF</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Loaded dynamically -->
+            <tr>
+              <td colspan="12" class="text-center py-4">Carregando registros...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination and Record Counter -->
+      <div class="table-footer">
+        <span class="record-counter" id="record-counter">Mostrando 0-0 de 0 registros</span>
+        <div class="pagination-controls" id="pagination-controls">
+          <!-- Loaded dynamically -->
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner-wrapper">
+      <div class="loading-spinner"></div>
+      <p class="loading-text" id="loading-overlay-text">Processando planilha...</p>
+    </div>
+  </div>
+
+  <!-- Script logic -->
+  <script src="app.js"></script>
+</body>
+</html>
