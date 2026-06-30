@@ -11,6 +11,7 @@ const nodemailer = require('nodemailer');
 async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterCity, kpis) {
   const emailUser = process.env.EMAIL_USER || 'armandolima@ffainfraestrutura.com.br';
   const emailPass = process.env.EMAIL_PASS || 'VpP8r7qD!QpbN6Og';
+  const dashboardUrl = process.env.DASHBOARD_URL || 'https://baixaihs.onrender.com/';
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.kinghost.net',
@@ -46,7 +47,9 @@ async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterC
 
       <p style="font-size: 14px; color: #334155; line-height: 1.6; margin-top: 0; margin-bottom: 24px;">
         Olá,<br><br>
-        Segue o resumo diário de acompanhamento de baixas de modems da operação IHS. A planilha detalhada com a exportação da tabela analítica está disponível em anexo.
+        Segue o resumo diário de acompanhamento de baixas de modems da operação IHS. A planilha detalhada com a exportação da tabela analítica está disponível em anexo.<br><br>
+        Para interagir com os filtros e visualizar os dados completos, acesse o painel online:<br>
+        <a href="${dashboardUrl}" style="color: #065f46; text-decoration: underline; font-weight: bold;">${dashboardUrl}</a>
       </p>
 
       <!-- KPI Box Grid (HTML Table for email compatibility) -->

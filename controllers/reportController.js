@@ -12,7 +12,7 @@ async function sendReport(req, res) {
     return res.status(400).json({ error: 'Missing required parameters' });
   }
 
-  const targetEmail = recipientEmail || process.env.EMAIL_RECIPIENT || 'mando.k2dob@live.com';
+  const targetEmail = recipientEmail || process.env.EMAIL_RECIPIENT || 'thiagosouza@ffainfraestrutura.com.br, victorrodrigues@ffainfraestrutura.com.br, armandolima@ffainfraestrutura.com.br';
 
   try {
     console.log(`Preparing to send report email to: ${targetEmail}`);

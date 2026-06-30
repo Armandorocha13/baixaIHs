@@ -594,7 +594,6 @@ function setupEventListeners() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          recipientEmail: 'mando.k2dob@live.com',
           chartImage: chartImage,
           logsData: records,
           cidade: state.cidade,
