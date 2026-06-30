@@ -1,7 +1,11 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_lxzyje16DKdf@ep-empty-sun-at91a66s-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('CRITICAL ERROR: DATABASE_URL environment variable is not defined!');
+}
 
 const pool = new Pool({
   connectionString: connectionString,

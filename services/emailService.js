@@ -9,9 +9,13 @@ const nodemailer = require('nodemailer');
  * @param {Object} kpis Current summary KPI stats
  */
 async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterCity, kpis) {
-  const emailUser = process.env.EMAIL_USER || 'armandolima@ffainfraestrutura.com.br';
-  const emailPass = process.env.EMAIL_PASS || 'VpP8r7qD!QpbN6Og';
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
   const dashboardUrl = process.env.DASHBOARD_URL || 'https://baixaihs.onrender.com/';
+
+  if (!emailUser || !emailPass) {
+    throw new Error('CRITICAL ERROR: SMTP credentials (EMAIL_USER / EMAIL_PASS) are not defined in env variables!');
+  }
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.kinghost.net',
