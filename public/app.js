@@ -14,7 +14,9 @@ const state = {
 };
 
 // API Base URL config (redirect requests to backend server if hosted elsewhere like Live Server)
-const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '3000'
+  ? 'http://localhost:3000'
+  : '';
 
 // UI Selectors
 const elCityButtons = document.querySelectorAll('#city-filter-group .btn-toggle');
