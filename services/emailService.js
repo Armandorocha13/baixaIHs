@@ -21,6 +21,7 @@ async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterC
     host: 'smtp.kinghost.net',
     port: 465,
     secure: true,
+    family: 4,
     auth: {
       user: emailUser,
       pass: emailPass

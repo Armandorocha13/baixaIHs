@@ -9,6 +9,7 @@ const transporter = nodemailer.createTransport({
   host: 'smtp.kinghost.net',
   port: 465,
   secure: true, // true for 465, false for other ports
+  family: 4,
   auth: {
     user: emailUser,
     pass: emailPass
