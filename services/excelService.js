@@ -101,7 +101,31 @@ async function importExcel(filePath) {
         
         const motivo = row.MOTIVO ? String(row.MOTIVO).trim() : 'Importado com sucesso.';
         const status = getStatus(motivo);
-        const estado = row.ESTADO ? String(row.ESTADO).trim().toUpperCase() : 'RJ';
+        // Derive estado: use ESTADO column first, then infer from PROJETO name
+        let estado = null;
+        if (row.ESTADO && String(row.ESTADO).trim()) {
+          const val = String(row.ESTADO).trim().toUpperCase();
+          if (val === 'SP' || val.includes('SAO PAULO') || val.includes('SÃO PAULO')) {
+            estado = 'SP';
+          } else if (val === 'RJ' || val.includes('RIO')) {
+            estado = 'RJ';
+          } else {
+            estado = val;
+          }
+        } 
+        
+        if (!estado && row.PROJETO) {
+          const proj = String(row.PROJETO).trim().toUpperCase();
+          if (/\bSP\b/.test(proj) || /-SP\b/.test(proj) || proj.includes('SAO PAULO') || proj.includes('SÃO PAULO')) {
+            estado = 'SP';
+          } else if (/\bRJ\b/.test(proj) || /-RJ\b/.test(proj) || proj.includes('RJO') || proj.includes('RIO')) {
+            estado = 'RJ';
+          }
+        }
+        
+        if (!estado) {
+          estado = 'RJ'; // default fallback
+        }
         const projeto = row.PROJETO ? String(row.PROJETO).trim() : '';
 
         // Only insert if OS number is present

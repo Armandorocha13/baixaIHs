@@ -3,9 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Helper to build the SQL WHERE clause dynamically based on filters
+ * Helper to build the SQL WHERE clause dynamically based on filters.
+ * When no date filters are provided, applies a rolling 7-day window
+ * based on the most recent data_execucao in the database.
  */
-function buildWhereClause(query) {
+async function buildWhereClause(query) {
   const { cidade, startDate, endDate, search } = query;
   const conditions = [];
   const params = [];
@@ -17,22 +19,36 @@ function buildWhereClause(query) {
     params.push(cidade.toUpperCase());
   }
 
-  // Date Filter: Start Date
-  if (startDate) {
-    conditions.push(`data_execucao >= $${paramIdx++}`);
-    params.push(startDate);
-  }
-
-  // Date Filter: End Date
-  if (endDate) {
-    conditions.push(`data_execucao <= $${paramIdx++}`);
-    params.push(endDate);
+  // Date Filter: rolling 7-day window when no dates are specified
+  if (!startDate && !endDate) {
+    // Get the most recent date in the database to anchor the window
+    const maxDateResult = await db.query('SELECT MAX(data_execucao) as max_date FROM logs_consumo');
+    const maxDate = maxDateResult.rows[0].max_date;
+    if (maxDate) {
+      const endDt = new Date(maxDate);
+      const startDt = new Date(maxDate);
+      startDt.setDate(startDt.getDate() - 10); // 7-day window (inclusive)
+      conditions.push(`data_execucao >= $${paramIdx++}`);
+      params.push(startDt.toISOString().split('T')[0]);
+      conditions.push(`data_execucao <= $${paramIdx++}`);
+      params.push(endDt.toISOString().split('T')[0]);
+    }
+  } else {
+    // Manual date filters
+    if (startDate) {
+      conditions.push(`data_execucao >= $${paramIdx++}`);
+      params.push(startDate);
+    }
+    if (endDate) {
+      conditions.push(`data_execucao <= $${paramIdx++}`);
+      params.push(endDate);
+    }
   }
 
   // Search Filter: OS, Matricula/Equipe, Material, or Serial (CODCPL)
   if (search) {
     const s = `%${search.trim()}%`;
-    conditions.push(`(num_os ILIKE $${paramIdx} OR equipe ILIKE $${paramIdx+1} OR material ILIKE $${paramIdx+2} OR codcpl ILIKE $${paramIdx+3})`);
+    conditions.push(`(num_os ILIKE $${paramIdx} OR equipe ILIKE $${paramIdx + 1} OR material ILIKE $${paramIdx + 2} OR codcpl ILIKE $${paramIdx + 3})`);
     params.push(s, s, s, s);
     paramIdx += 4;
   }
@@ -51,7 +67,7 @@ async function getLogs(req, res) {
     const limit = parseInt(req.query.limit, 10) || 10;
     const offset = (page - 1) * limit;
 
-    const { whereStr, params } = buildWhereClause(req.query);
+    const { whereStr, params } = await buildWhereClause(req.query);
 
     const queryParams = [...params, limit, offset];
     const logsQuery = `
@@ -87,7 +103,7 @@ async function getLogs(req, res) {
  */
 async function getStats(req, res) {
   try {
-    const { whereStr, params } = buildWhereClause(req.query);
+    const { whereStr, params } = await buildWhereClause(req.query);
 
     // 1. Calculate KPI Metrics
     const kpisQuery = `
