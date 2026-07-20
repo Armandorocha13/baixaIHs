@@ -11,6 +11,9 @@ function obterClienteAutenticacao() {
     let credenciais;
     try {
       credenciais = JSON.parse(chaveJson);
+      if (credenciais.private_key) {
+        credenciais.private_key = credenciais.private_key.replace(/\\n/g, '\n');
+      }
     } catch (err) {
       throw new Error(
         'A variável GOOGLE_SERVICE_ACCOUNT_KEY não contém um JSON válido.'
