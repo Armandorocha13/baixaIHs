@@ -18,7 +18,7 @@ function obterClienteAutenticacao() {
     }
 
     return new google.auth.GoogleAuth({
-      credentials,
+      credentials: credenciais,
       scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     });
   }
