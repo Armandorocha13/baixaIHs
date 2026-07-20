@@ -24,8 +24,7 @@ const elStartDate = document.getElementById('start-date');
 const elEndDate = document.getElementById('end-date');
 const elSearchInput = document.getElementById('search-input');
 const elBtnClearFilters = document.getElementById('btn-clear-filters');
-const elBtnImportExcel = document.getElementById('btn-import-excel');
-const elFileUploader = document.getElementById('file-uploader');
+const elBtnSyncSheets = document.getElementById('btn-sync-sheets');
 const elBtnExportCsv = document.getElementById('btn-export-csv');
 const elBtnSendEmail = document.getElementById('btn-send-email');
 
@@ -259,6 +258,19 @@ function renderCharts(dailyData, errorData, comparisonData) {
     }
   };
 
+  // Plugin to draw a solid white background behind the chart (prevents transparent PNG issues in email clients)
+  const whiteBackgroundPlugin = {
+    id: 'whiteBackground',
+    beforeDraw(chart) {
+      const { ctx } = chart;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, chart.width, chart.height);
+      ctx.restore();
+    }
+  };
+
   state.comparisonChart = new Chart(ctxComparison, {
     type: 'bar',
     data: {
@@ -321,7 +333,7 @@ function renderCharts(dailyData, errorData, comparisonData) {
         }
       }
     },
-    plugins: [datalabelsPlugin]
+    plugins: [datalabelsPlugin, whiteBackgroundPlugin]
   });
 }
 
@@ -465,34 +477,21 @@ function setupEventListeners() {
     refreshDashboard();
   });
 
-  // 5. Trigger excel uploader dialog
-  elBtnImportExcel.addEventListener('click', () => {
-    elFileUploader.click();
-  });
-
-  // 6. Handle excel upload action
-  elFileUploader.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Form data packaging
-    const formData = new FormData();
-    formData.append('file', file);
-
+  // 5. Sync from Google Sheets (replaces file upload)
+  elBtnSyncSheets.addEventListener('click', async () => {
     // Show loading overlay
-    elLoadingOverlayText.innerText = 'Importando e processando planilha...';
+    elLoadingOverlayText.innerText = 'Sincronizando dados com o Google Sheets...';
     elLoadingOverlay.style.display = 'flex';
 
     try {
-      const response = await fetch(`${API_BASE}/api/upload`, {
-        method: 'POST',
-        body: formData
+      const response = await fetch(`${API_BASE}/api/sync`, {
+        method: 'POST'
       });
 
       const resData = await response.json();
-      if (!response.ok) throw new Error(resData.error || 'Erro ao fazer upload da planilha.');
+      if (!response.ok) throw new Error(resData.error || 'Erro ao sincronizar com Google Sheets.');
 
-      alert('Planilha importada com sucesso!');
+      alert(`✅ ${resData.message}`);
       
       // Reset page to 1 and reload everything
       state.page = 1;
@@ -500,16 +499,14 @@ function setupEventListeners() {
 
     } catch (err) {
       console.error(err);
-      alert(`Falha na importação: ${err.message}`);
+      alert(`Falha na sincronização: ${err.message}`);
     } finally {
-      // Clear file input
-      elFileUploader.value = '';
       // Hide loading
       elLoadingOverlay.style.display = 'none';
     }
   });
 
-  // 7. Export CSV of current query results (all pages matching current filter)
+  // 6. Export CSV of current query results (all pages matching current filter)
   elBtnExportCsv.addEventListener('click', async () => {
     try {
       // Fetch all records without pagination limits to make complete CSV matching filters
@@ -555,7 +552,7 @@ function setupEventListeners() {
     }
   });
 
-  // 8. Enviar Relatório por E-mail (Pré-configurado para Thiago Souza com tabela analítica em anexo)
+  // 7. Enviar Relatório por E-mail (Pré-configurado para Thiago Souza com tabela analítica em anexo)
   elBtnSendEmail.addEventListener('click', async () => {
     // Capture chart image as base64
     let chartImage = '';

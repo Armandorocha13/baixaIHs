@@ -65,11 +65,9 @@
         <button id="btn-clear-filters" class="btn btn-secondary">
           <i class="fa-solid fa-filter-circle-xmark"></i> Limpar Filtros
         </button>
-        <button id="btn-import-excel" class="btn btn-dark">
-          <i class="fa-solid fa-file-import"></i> Importar Planilha
+        <button id="btn-sync-sheets" class="btn btn-dark">
+          <i class="fa-solid fa-cloud-arrow-down"></i> Sincronizar Sheets
         </button>
-        <!-- Hidden file input -->
-        <input type="file" id="file-uploader" accept=".xlsx, .xls" style="display: none;">
       </div>
     </section>
 
@@ -192,7 +190,7 @@
   <div class="loading-overlay" id="loading-overlay">
     <div class="spinner-wrapper">
       <div class="loading-spinner"></div>
-      <p class="loading-text" id="loading-overlay-text">Processando planilha...</p>
+      <p class="loading-text" id="loading-overlay-text">Sincronizando dados...</p>
     </div>
   </div>
 

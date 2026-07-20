@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node servidor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,9 +16,8 @@
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
-    "multer": "^2.2.0",
+    "googleapis": "^173.0.0",
     "nodemailer": "^9.0.3",
-    "pg": "^8.22.0",
     "xlsx": "^0.18.5"
   }
 }

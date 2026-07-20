@@ -1,63 +1,63 @@
 const nodemailer = require('nodemailer');
 
 /**
- * Dispatches the report email with inline chart and XLSX analytical spreadsheet attachment.
- * @param {string} recipientEmail Recipient email address
- * @param {Buffer} chartBuffer Binary chart PNG buffer
- * @param {Buffer} excelBuffer Binary excel XLSX buffer
- * @param {string} filterCity Active city filter name (display friendly)
- * @param {Object} kpis Current summary KPI stats
+ * Dispara o relatório por e-mail contendo o gráfico de comparação embutido (inline)
+ * e a planilha Excel analítica anexa.
+ *
+ * @param {string} destinatarios Lista de e-mails de destino separados por vírgula
+ * @param {Buffer} bufferGrafico Buffer binário do gráfico PNG
+ * @param {Buffer} bufferExcel Buffer binário da planilha Excel XLSX
+ * @param {string} filtroCidade Nome amigável do filtro de cidade ativo
+ * @param {Object} kpis Métricas de resumo de KPIs
  */
-async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterCity, kpis) {
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
-  const dashboardUrl = process.env.DASHBOARD_URL || 'https://baixaihs.onrender.com/';
+async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, filtroCidade, kpis) {
+  const usuarioEmail = process.env.EMAIL_USER;
+  const senhaEmail = process.env.EMAIL_PASS;
+  const urlDashboard = process.env.DASHBOARD_URL || 'https://baixaihs.onrender.com/';
 
-  if (!emailUser || !emailPass) {
-    throw new Error('CRITICAL ERROR: SMTP credentials (EMAIL_USER / EMAIL_PASS) are not defined in env variables!');
+  if (!usuarioEmail || !senhaEmail) {
+    throw new Error('As credenciais SMTP (EMAIL_USER / EMAIL_PASS) não estão definidas no arquivo .env.');
   }
 
-  const transporter = nodemailer.createTransport({
+  const transportador = nodemailer.createTransport({
     host: 'smtp.kinghost.net',
     port: 465,
     secure: true,
     family: 4,
     auth: {
-      user: emailUser,
-      pass: emailPass
+      user: usuarioEmail,
+      pass: senhaEmail
     },
     tls: {
       rejectUnauthorized: false
     }
   });
 
-  const attachments = [
+  const anexos = [
     {
       filename: 'comparativo_diario.png',
-      content: chartBuffer,
+      content: bufferGrafico,
       cid: 'comparisonChart'
     },
     {
       filename: `relatorio_baixas_IHS_${new Date().toISOString().split('T')[0]}.xlsx`,
-      content: excelBuffer,
+      content: bufferExcel,
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     }
   ];
 
-  // Compile HTML styled email body
-  const emailHtml = `
+  const htmlEmail = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
       <h2 style="color: #1e3a8a; margin-top: 0; margin-bottom: 10px;">Relatório de Acompanhamento de Baixas</h2>
-      <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 20px;">Filtro de Cidade ativo: <strong>${filterCity}</strong></p>
+      <p style="font-size: 13px; color: #64748b; margin-top: 0; margin-bottom: 20px;">Filtro de Cidade ativo: <strong>${filtroCidade}</strong></p>
 
       <p style="font-size: 14px; color: #334155; line-height: 1.6; margin-top: 0; margin-bottom: 24px;">
         Olá,<br><br>
         Segue o resumo diário de acompanhamento de baixas de modems da operação IHS. A planilha detalhada com a exportação da tabela analítica está disponível em anexo.<br><br>
         Para interagir com os filtros e visualizar os dados completos, acesse o painel online:<br>
-        <a href="${dashboardUrl}" style="color: #065f46; text-decoration: underline; font-weight: bold;">${dashboardUrl}</a>
+        <a href="${urlDashboard}" style="color: #065f46; text-decoration: underline; font-weight: bold;">${urlDashboard}</a>
       </p>
 
-      <!-- KPI Box Grid (HTML Table for email compatibility) -->
       <div style="margin-bottom: 24px;">
         <table style="width: 100%; border-spacing: 12px; margin-left: -12px; margin-right: -12px;">
           <tr>
@@ -77,7 +77,6 @@ async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterC
         </table>
       </div>
 
-      <!-- Embedded Chart -->
       <h3 style="color: #334155; font-size: 14px; margin-bottom: 12px; font-weight: bold;">Comparativo Diário de Importações: RJ × SP</h3>
       <div style="text-align: center; margin-bottom: 24px; border: 1px solid #f1f5f9; padding: 12px; border-radius: 8px; background-color: #ffffff;">
         <img src="cid:comparisonChart" style="width: 100%; max-width: 550px; height: auto; display: block; margin: 0 auto;" />
@@ -89,13 +88,13 @@ async function sendEmailReport(recipientEmail, chartBuffer, excelBuffer, filterC
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"Painel IHS" <${emailUser}>`,
-    to: recipientEmail,
-    subject: `Relatório de Logs de Consumo - MODEM [${filterCity}]`,
-    html: emailHtml,
-    attachments: attachments
+  await transportador.sendMail({
+    from: `"Painel IHS" <${usuarioEmail}>`,
+    to: destinatarios,
+    subject: `Relatório de Logs de Consumo - MODEM [${filtroCidade}]`,
+    html: htmlEmail,
+    attachments: anexos
   });
 }
 
-module.exports = { sendEmailReport };
+module.exports = { enviarRelatorioEmail };
