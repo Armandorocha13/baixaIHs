@@ -112,7 +112,7 @@ async function refreshDashboard() {
   ]);
 
   if (statsData) {
-    renderKPIs(statsData.kpis);
+    renderKPIs(statsData.kpis, statsData.dailyEvolution);
     renderCharts(statsData.dailyEvolution, statsData.errorReasons, statsData.rjSpComparison);
   }
 
@@ -124,11 +124,25 @@ async function refreshDashboard() {
 }
 
 // Render KPIs
-function renderKPIs(kpis) {
-  if (elKpiTotal) elKpiTotal.innerText = formatNumber(kpis.total);
-  if (elKpiSuccesses) elKpiSuccesses.innerText = formatNumber(kpis.sucessos);
-  if (elKpiErrors) elKpiErrors.innerText = formatNumber(kpis.erros);
-  if (elKpiRate) elKpiRate.innerText = `${kpis.taxaSucesso}%`;
+function renderKPIs(kpis, dailyEvolution) {
+  let totalDia = kpis.total;
+  let sucessosDia = kpis.sucessos;
+  let taxaDia = kpis.taxaSucesso;
+
+  // Garantia direta a partir da evolução diária
+  if (dailyEvolution && dailyEvolution.length > 0) {
+    const ultimoDia = dailyEvolution[dailyEvolution.length - 1];
+    const totalUltimoDia = (ultimoDia.sucesso || 0) + (ultimoDia.jaBaixado || 0) + (ultimoDia.semSaldo || 0);
+    const sucessosUltimoDia = ultimoDia.sucesso || 0;
+    
+    totalDia = totalUltimoDia;
+    sucessosDia = sucessosUltimoDia;
+    taxaDia = totalUltimoDia > 0 ? parseFloat(((sucessosUltimoDia / totalUltimoDia) * 100).toFixed(1)) : 0.0;
+  }
+
+  if (elKpiTotal) elKpiTotal.innerText = formatNumber(totalDia);
+  if (elKpiSuccesses) elKpiSuccesses.innerText = formatNumber(sucessosDia);
+  if (elKpiRate) elKpiRate.innerText = `${taxaDia}%`;
 }
 
 // Render Charts (Chart.js)

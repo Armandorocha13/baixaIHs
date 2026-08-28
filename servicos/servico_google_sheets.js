@@ -51,9 +51,25 @@ async function buscarLinhasPlanilha(opcoes = {}) {
   const spreadsheetId = opcoes.spreadsheetId || process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
   const range = opcoes.range || process.env.GOOGLE_SHEETS_RANGE || 'BAIXA!A1:Z';
 
-  if (!spreadsheetId) {
+  const possuiChave = !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY || !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+  if (!spreadsheetId || !possuiChave) {
+    console.log('[GoogleSheets] Sem credenciais ou ID no .env. Tentando carregar planilha local como fallback...');
+    const XLSX = require('xlsx');
+    const path = require('path');
+    const fs = require('fs');
+
+    const caminhoPlanilha = path.join(__dirname, '../Acompanhamento de baixa - MODENS IHS.xlsx');
+    if (fs.existsSync(caminhoPlanilha)) {
+      const workbook = XLSX.readFile(caminhoPlanilha);
+      const nomeAba = workbook.SheetNames.includes('BAIXA') ? 'BAIXA' : workbook.SheetNames[0];
+      const sheet = workbook.Sheets[nomeAba];
+      const dados = XLSX.utils.sheet_to_json(sheet);
+      console.log(`[GoogleSheets] Carregados ${dados.length} registros da planilha local.`);
+      return dados;
+    }
     throw new Error(
-      'A variável GOOGLE_SHEETS_SPREADSHEET_ID não está configurada no .env.'
+      'Nenhuma credencial Google Sheets encontrada no .env e planilha local também não encontrada.'
     );
   }
 

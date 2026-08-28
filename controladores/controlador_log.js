@@ -98,11 +98,22 @@ async function obterEstatisticas(req, res) {
     const registros = armazenamentoDados.getRecords();
     const filtrados = aplicarFiltros(registros, req.query);
 
-    // 1. Métricas de KPIs
-    const total = filtrados.length;
-    const sucessos = filtrados.filter(r => r.status === 'SUCESSO').length;
-    const erros = filtrados.filter(r => r.status === 'SEM SALDO' || r.status === 'ERRO').length;
-    const taxaSucesso = total > 0 ? parseFloat(((sucessos / total) * 100).toFixed(1)) : 0.0;
+    // 1. Métricas de KPIs do dia mais recente/atual filtrado
+    const datasValidas = filtrados.map(r => r.data_execucao).filter(Boolean).sort();
+    const dataDoDia = datasValidas.length > 0 ? datasValidas[datasValidas.length - 1] : null;
+
+    let total = 0;
+    let sucessos = 0;
+    let erros = 0;
+    let taxaSucesso = 0.0;
+
+    if (dataDoDia) {
+      const registrosDoDia = filtrados.filter(r => r.data_execucao === dataDoDia);
+      total = registrosDoDia.length;
+      sucessos = registrosDoDia.filter(r => r.status === 'SUCESSO').length;
+      erros = registrosDoDia.filter(r => r.status === 'SEM SALDO' || r.status === 'ERRO').length;
+      taxaSucesso = total > 0 ? parseFloat(((sucessos / total) * 100).toFixed(1)) : 0.0;
+    }
 
     // 2. Distribuição diária por status (Gráfico de Linha)
     const mapaDiario = {};
@@ -130,7 +141,15 @@ async function obterEstatisticas(req, res) {
     const comparativoRjSp = Object.values(mapaComparativo).sort((a, b) => a.data_execucao.localeCompare(b.data_execucao));
 
     res.json({
-      kpis: { total, sucessos, erros, taxaSucesso },
+      kpis: {
+        total,
+        sucessos,
+        erros,
+        taxaSucesso,
+        dataDoDia,
+        totalGeral: filtrados.length,
+        sucessosGeral: filtrados.filter(r => r.status === 'SUCESSO').length
+      },
       dailyEvolution: evolucaoDiaria,
       rjSpComparison: comparativoRjSp
     });

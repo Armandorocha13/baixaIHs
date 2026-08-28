@@ -13,7 +13,7 @@ async function enviarRelatorio(req, res) {
     return res.status(400).json({ error: 'Parâmetros obrigatórios ausentes.' });
   }
 
-  const emailDestinatario = recipientEmail || process.env.EMAIL_RECIPIENT || 'thiagosouza@ffainfraestrutura.com.br, victorrodrigues@ffainfraestrutura.com.br, armandolima@ffainfraestrutura.com.br, priscilasouza@ffainfraestrutura.com.br, douglasfarias@ffainfraestrutura.com.br, tamiresmello@ffainfraestrutura.com.br, eduardooliveira@ffainfraestrutura.com.br, alinenascimento@ffainfraestrutura.com.br';
+  const emailDestinatario = recipientEmail || process.env.EMAIL_RECIPIENT || 'mandoqxo@gmail.com, thiagosouza@ffainfraestrutura.com.br, victorrodrigues@ffainfraestrutura.com.br, armandolima@ffainfraestrutura.com.br, priscilasouza@ffainfraestrutura.com.br, douglasfaria@ffainfraestrutura.com.br, tamiresmello@ffainfraestrutura.com.br, eduardooliveira@ffainfraestrutura.com.br, alinenascimento@ffainfraestrutura.com.br, joseguimaraes@ffainfraestrutura.com.br, raimundolima@ffainfraestrutura.com.br';
 
   try {
     console.log(`[Relatório] Preparando envio de relatório por e-mail para: ${emailDestinatario}`);
