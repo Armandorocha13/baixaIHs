@@ -23,37 +23,39 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('\nBuscando linhas da planilha do Google Sheets...');
-  const registros = await buscarLinhasPlanilha();
-  console.log(`✅ Foram lidas ${registros.length} linhas da aba ativa.\n`);
+  console.log('\nBuscando linhas da planilha do Google Sheets (BAIXA e BAIXA CONNECT)...');
+  const dados = await buscarLinhasPlanilha();
+  
+  const linhasBaixa = dados.baixa || (Array.isArray(dados) ? dados : []);
+  const linhasConnect = dados.baixaConnect || [];
 
-  if (registros.length === 0) {
-    console.log('⚠️ Nenhuma linha de dados encontrada na planilha. Certifique-se de que há registros após a linha de cabeçalho.');
-    process.exit(0);
+  console.log(`✅ Aba BAIXA:           ${linhasBaixa.length} registros lidos.`);
+  console.log(`✅ Aba BAIXA CONNECT:   ${linhasConnect.length} registros lidos.`);
+
+  const armazenamentoDados = require('../servicos/armazenamento_dados');
+  const totalArmazenado = armazenamentoDados.setRecords(dados);
+  const registros = armazenamentoDados.getRecords();
+
+  console.log(`\n🎉 Total consolidado em memória: ${totalArmazenado} registros (sem perda de dados históricos).`);
+
+  const rjCount = registros.filter(r => r.estado === 'RJ').length;
+  const spCount = registros.filter(r => r.estado === 'SP').length;
+  const connectCount = registros.filter(r => r.aba_origem === 'BAIXA CONNECT').length;
+  const baixaSpCount = spCount - connectCount;
+
+  console.log('\n--- Resumo por Origem e Estado ---');
+  console.log(`  RJ (Aba BAIXA):              ${rjCount} registros`);
+  console.log(`  SP Antigo (Aba BAIXA):       ${baixaSpCount} registros`);
+  console.log(`  SP Novo (Aba BAIXA CONNECT): ${connectCount} registros`);
+  console.log(`  Total SP:                    ${spCount} registros`);
+
+  console.log('\n--- Amostra de Registro de BAIXA CONNECT ---');
+  const amostraConnect = registros.find(r => r.aba_origem === 'BAIXA CONNECT');
+  if (amostraConnect) {
+    console.log(JSON.stringify(amostraConnect, null, 2));
   }
 
-  console.log('--- Amostragem: primeiras 3 linhas ---');
-  const amostra = registros.slice(0, 3);
-  amostra.forEach((reg, i) => {
-    console.log(`\nLinha ${i + 1}:`);
-    console.log(`  NUM_OS:        ${reg.NUM_OS}`);
-    console.log(`  NUM_CLIENTE:   ${reg.NUM_CLIENTE}`);
-    console.log(`  DATA_EXECUCAO: ${reg.DATA_EXECUCAO}  → convertido: ${parseDate(reg.DATA_EXECUCAO)}`);
-    console.log(`  EQUIPE:        ${reg.EQUIPE}`);
-    console.log(`  CODMAT:        ${reg.CODMAT}`);
-    console.log(`  CODCPL:        ${reg.CODCPL}`);
-    console.log(`  QTDE_APLIC:    ${reg.QTDE_APLIC}  → safeInt: ${safeInt(reg.QTDE_APLIC)}`);
-    console.log(`  QTDE_REMOV:    ${reg.QTDE_REMOV}  → safeInt: ${safeInt(reg.QTDE_REMOV)}`);
-    console.log(`  MOTIVO:        ${reg.MOTIVO}  → status: ${getStatus(reg.MOTIVO)}`);
-    console.log(`  UF:            ${reg.UF || reg.ESTADO}`);
-    console.log(`  PROJETO:       ${reg.PROJETO}`);
-  });
-
-  console.log('\n--- Cabeçalhos de coluna detectados ---');
-  const chaves = Object.keys(registros[0]);
-  console.log(chaves.join(', '));
-
-  console.log('\n✅ Teste de conexão e leitura finalizado com sucesso.');
+  console.log('\n✅ Teste de sincronização e consolidação finalizado com sucesso.');
 }
 
 main().catch(err => {

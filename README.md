@@ -80,8 +80,12 @@ GOOGLE_APPLICATION_CREDENTIALS=./chave_service_account.json
 1. **Conta de Serviço:** Crie uma conta de serviço no Google Cloud Console, ative a Google Sheets API para o projeto correspondente e exporte a chave privada em formato JSON.
 2. **Nome da Chave:** Renomeie a chave obtida para `chave_service_account.json` e armazene na raiz do projeto.
 3. **Permissão na Planilha:** Na planilha do Google Sheets que contém os dados da operação, clique em compartilhar e adicione o endereço de e-mail da conta de serviço como leitor.
-4. **Formato da Planilha:** A aba padrão contendo as linhas de dados deve se chamar `BAIXA`. O cabeçalho deve estar posicionado na primeira linha com as seguintes colunas:
-   `CODCT`, `PROJETO`, `NUM_OS`, `NUM_CLIENTE`, `DATA_EXECUCAO`, `TAREFA`, `EQUIPE`, `CODMAT`, `CODCPL`, `QTDE_APLIC`, `APLICANIEL`, `QTDE_REMOV`, `MOTIVO`, `UF`.
+4. **Formato da Planilha e Abas Consumidas:**
+   - **Aba `BAIXA`:** Dados históricos de baixas de modems (RJ e histórico de SP). Cabeçalho padrão:
+     `CODCT`, `PROJETO`, `NUM_OS`, `NUM_CLIENTE`, `DATA_EXECUCAO`, `TAREFA`, `EQUIPE`, `CODMAT`, `CODCPL`, `QTDE_APLIC`, `APLICANIEL`, `QTDE_REMOV`, `MOTIVO`, `UF`.
+   - **Aba `BAIXA CONNECT`:** Baixas correntes da operação de SP (I-SYSTEMS). Cabeçalho padrão:
+     `NOVO`, `ALTERADO POR`, `CODIGO`, `SAP`, `VALOR EQP`, `MODELO`, `SERIAL`, `MAC`, `DESCRICAO`, `STATUS`, `OBSERVACAO`, `OBSERVACAO TÉCNICO`, `TECNICO`, `ATUALIZADO POR`, `LOGIN`, `RE`, `WO`, `CONTRATO`, `SERVIÇO`, `DATA CONTRATO`, `OS`, `CIDADE`, `BASE`, `DMT/LOTE`, `DATA ALTERAÇÃO`, `HORA ALTERAÇÃO`.
+   O sistema lê ambas as abas em lote atômico (`batchGet`) e unifica os registros em memória de forma desduplicada, preservando integralmente o histórico de ambos os estados.
 
 ---
 

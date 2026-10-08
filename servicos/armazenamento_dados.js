@@ -63,9 +63,9 @@ function formatDateLabel(isoDate) {
 function getStatus(motivo) {
   if (!motivo) return 'SUCESSO';
   const m = String(motivo).toLowerCase();
-  if (m.includes('sucesso')) return 'SUCESSO';
+  if (m.includes('sucesso') || m.includes('instalado') || m.includes('conclu') || m.includes('baixad')) return 'SUCESSO';
   if (m.includes('saldo')) return 'SEM SALDO';
-  if (m.includes('baixado')) return 'JÁ BAIXADO';
+  if (m.includes('baixado') || m.includes('já baixado') || m.includes('ja baixado')) return 'JÁ BAIXADO';
   return 'ERRO';
 }
 
@@ -95,49 +95,170 @@ function deriveEstado(row) {
   return 'RJ'; // Fallback padrão
 }
 
+/**
+ * Normaliza um registro individual vindo da aba clássica BAIXA.
+ * Preserva integralmente o histórico de RJ e dados antigos de SP.
+ */
+function normalizarLinhaBaixa(row) {
+  const numOs = row.NUM_OS ? String(row.NUM_OS).trim() : null;
+  if (!numOs) return null;
+
+  const dataExec = parseDate(row.DATA_EXECUCAO);
+  const motivo = row.MOTIVO ? String(row.MOTIVO).trim() : 'Importado com sucesso.';
+
+  return {
+    num_os: numOs,
+    cliente: row.NUM_CLIENTE ? String(row.NUM_CLIENTE).trim() : '-',
+    data_execucao: dataExec,
+    data_execucao_formatted: formatDateBR(dataExec),
+    data_label: formatDateLabel(dataExec),
+    equipe: row.EQUIPE ? String(row.EQUIPE).trim() : null,
+    material: row.CODMAT ? String(row.CODMAT).trim() : null,
+    codcpl: row.CODCPL ? String(row.CODCPL).trim() : null,
+    qtd_aplic: safeInt(row.QTDE_APLIC),
+    qtd_remov: safeInt(row.QTDE_REMOV),
+    aba_origem: 'MODEM',
+    motivo,
+    status: getStatus(motivo),
+    estado: deriveEstado(row),
+    projeto: row.PROJETO ? String(row.PROJETO).trim() : '',
+  };
+}
+
+/**
+ * Normaliza um registro individual vindo da aba BAIXA CONNECT (dados de SP).
+ */
+function normalizarLinhaConnect(row) {
+  // Identificação do número de OS: prioriza OS, OBSERVACAO TÉCNICO, WO, CONTRATO ou SERIAL
+  const osRaw =
+    row['OS'] ||
+    row['OBSERVACAO TÉCNICO'] ||
+    row['OBSERVACAO TECNICO'] ||
+    row['WO'] ||
+    row['CONTRATO'] ||
+    row['SERIAL'];
+
+  const numOs = osRaw ? String(osRaw).trim() : null;
+  if (!numOs) return null;
+
+  const dataRaw =
+    row['DATA ALTERAÇÃO'] ||
+    row['DATA ALTERACAO'] ||
+    row['DATA CONTRATO'];
+
+  const dataExec = parseDate(dataRaw);
+
+  const cliente = row['CONTRATO']
+    ? String(row['CONTRATO']).trim()
+    : (row['BASE'] ? String(row['BASE']).trim() : '-');
+
+  const eqRaw =
+    row['TECNICO'] ||
+    row['RE'] ||
+    row['LOGIN'] ||
+    row['ALTERADO POR'];
+  const equipe = eqRaw ? String(eqRaw).trim() : null;
+
+  const matRaw = row['SAP'] || row['CODIGO'] || row['MODELO'];
+  const material = matRaw ? String(matRaw).trim() : null;
+
+  const serialRaw = row['SERIAL'] || row['MAC'];
+  const codcpl = serialRaw ? String(serialRaw).trim() : null;
+
+  const motRaw = row['DMT/LOTE'] || row['STATUS'] || 'Baixa realizada';
+  const motivo = motRaw ? String(motRaw).trim() : 'Baixa realizada';
+
+  const statusRaw = row['STATUS'] || motivo;
+  const status = getStatus(statusRaw);
+
+  const projRaw = row['BASE'] || 'I-SYSTEMS';
+  const projeto = projRaw ? String(projRaw).trim() : 'I-SYSTEMS';
+
+  return {
+    num_os: numOs,
+    cliente,
+    data_execucao: dataExec,
+    data_execucao_formatted: formatDateBR(dataExec),
+    data_label: formatDateLabel(dataExec),
+    equipe,
+    material,
+    codcpl,
+    qtd_aplic: 1, // Cada item registrado em BAIXA CONNECT representa 1 instalação de equipamento
+    qtd_remov: 0,
+    aba_origem: 'BAIXA CONNECT',
+    motivo,
+    status,
+    estado: 'SP', // Dados da aba BAIXA CONNECT pertencem à operação de SP
+    projeto,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // API Pública
 // ---------------------------------------------------------------------------
 
 /**
- * Processa as linhas brutas vindas do Google Sheets e armazena os registros higienizados.
+ * Processa as linhas vindas do Google Sheets e armazena os registros consolidados.
+ * Suporta tanto o formato objeto { baixa, baixaConnect } quanto array clássico,
+ * preservando 100% dos dados históricos de SP e RJ da aba BAIXA e agregando os novos
+ * registros de SP de BAIXA CONNECT de forma desduplicada.
  *
- * @param {Object[]} rawRows - Linhas brutas retornadas pelo serviço do Google Sheets
- * @returns {number} Quantidade de registros válidos armazenados
+ * @param {Object|Array} dadosEntrada - Dados retornados pelo serviço do Google Sheets
+ * @returns {number} Quantidade de registros consolidados armazenados
  */
-function setRecords(rawRows) {
-  const processed = [];
+function setRecords(dadosEntrada) {
+  let linhasBaixa = [];
+  let linhasConnect = [];
 
-  for (const row of rawRows) {
-    const numOs = row.NUM_OS ? String(row.NUM_OS).trim() : null;
-    if (!numOs) continue; // Pula linhas sem número de OS
-
-    const dataExec = parseDate(row.DATA_EXECUCAO);
-    const motivo = row.MOTIVO ? String(row.MOTIVO).trim() : 'Importado com sucesso.';
-
-    processed.push({
-      num_os: numOs,
-      cliente: row.NUM_CLIENTE ? String(row.NUM_CLIENTE).trim() : '-',
-      data_execucao: dataExec,
-      data_execucao_formatted: formatDateBR(dataExec),
-      data_label: formatDateLabel(dataExec),
-      equipe: row.EQUIPE ? String(row.EQUIPE).trim() : null,
-      material: row.CODMAT ? String(row.CODMAT).trim() : null,
-      codcpl: row.CODCPL ? String(row.CODCPL).trim() : null,
-      qtd_aplic: safeInt(row.QTDE_APLIC),
-      qtd_remov: safeInt(row.QTDE_REMOV),
-      aba_origem: 'MODEM',
-      motivo,
-      status: getStatus(motivo),
-      estado: deriveEstado(row),
-      projeto: row.PROJETO ? String(row.PROJETO).trim() : '',
-    });
+  if (Array.isArray(dadosEntrada)) {
+    // Array simples: distribui conforme as propriedades da linha
+    for (const row of dadosEntrada) {
+      if (row.SERIAL && (row.STATUS || row['ALTERADO POR']) && !row.CODMAT) {
+        linhasConnect.push(row);
+      } else {
+        linhasBaixa.push(row);
+      }
+    }
+  } else if (dadosEntrada && typeof dadosEntrada === 'object') {
+    linhasBaixa = dadosEntrada.baixa || [];
+    linhasConnect = dadosEntrada.baixaConnect || [];
   }
 
-  _records = processed;
+  const mapaChaves = new Set();
+  const consolidados = [];
+
+  // 1. Processar registros da aba clássica BAIXA (preservando histórico RJ e SP)
+  let countBaixa = 0;
+  for (const row of linhasBaixa) {
+    const item = normalizarLinhaBaixa(row);
+    if (!item) continue;
+
+    const chave = `${item.estado}_${item.num_os}_${item.codcpl || ''}_${item.data_execucao || ''}`;
+    if (!mapaChaves.has(chave)) {
+      mapaChaves.add(chave);
+      consolidados.push(item);
+      countBaixa++;
+    }
+  }
+
+  // 2. Processar registros da nova aba BAIXA CONNECT (dados de SP)
+  let countConnect = 0;
+  for (const row of linhasConnect) {
+    const item = normalizarLinhaConnect(row);
+    if (!item) continue;
+
+    const chave = `${item.estado}_${item.num_os}_${item.codcpl || ''}_${item.data_execucao || ''}`;
+    if (!mapaChaves.has(chave)) {
+      mapaChaves.add(chave);
+      consolidados.push(item);
+      countConnect++;
+    }
+  }
+
+  _records = consolidados;
   _lastSyncTime = new Date();
-  console.log(`[ArmazenamentoDados] Armazenados ${processed.length} registros em memória.`);
-  return processed.length;
+  console.log(`[ArmazenamentoDados] Consolidados ${consolidados.length} registros em memória (BAIXA: ${countBaixa}, BAIXA CONNECT: ${countConnect}).`);
+  return consolidados.length;
 }
 
 /**
