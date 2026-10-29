@@ -152,7 +152,7 @@ function fetchChartBuffer(postPayload) {
  * Design moderno e idêntico ao painel web oficial:
  * - Título centralizado: "Comparativo Diario de Importacoes: RJ x SP"
  * - Legenda circular no canto superior direito: "Rio de Janeiro (RJ)" e "Sao Paulo (SP)"
- * - Barras arredondadas no topo (azul cerúleo #0284c7 e azul escuro #1e3a8a)
+ * - Barras arredondadas no topo (azul claro #38bdf8 e azul escuro #1e3a8a)
  * - Números em negrito centralizados no topo de cada coluna (datalabels)
  * - Eixo X limpo sem linhas verticais com datas no formato DD/MM
  * - Eixo Y com linhas horizontais suaves (#f1f5f9) e escala com folga
@@ -172,8 +172,8 @@ async function gerarGraficoBuffer(dadosTabela = []) {
         {
           label: 'Rio de Janeiro (RJ)',
           data: rj,
-          backgroundColor: '#0284c7',
-          borderColor: '#0369a1',
+          backgroundColor: '#38bdf8', // Azul Claro
+          borderColor: '#0284c7',
           borderWidth: 1,
           borderRadius: 4,
           borderSkipped: 'bottom',

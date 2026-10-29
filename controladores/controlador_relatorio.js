@@ -18,14 +18,25 @@ async function enviarRelatorio(req, res) {
   try {
     console.log(`[Relatório] Preparando envio de relatório por e-mail para: ${emailDestinatario}`);
 
-    // Converte os dados base64 do gráfico em Buffer binário
-    const dadosBase64 = chartImage.replace(/^data:image\/png;base64,/, '');
-    const bufferGrafico = Buffer.from(dadosBase64, 'base64');
-
     // Constrói a planilha Excel em memória utilizando a totalidade dos dados presentes no cache
     const armazenamentoDados = require('../servicos/armazenamento_dados');
     const todosRegistros = armazenamentoDados.getRecords();
     const bufferExcel = await criarPlanilhaLogs(todosRegistros);
+
+    // Gera o gráfico oficial com as cores garantidas no servidor (RJ: Azul Claro #38bdf8, SP: Azul Escuro #1e3a8a)
+    let bufferGrafico = null;
+    try {
+      const { gerarGraficoBuffer } = require('../servicos/grafico_servidor');
+      bufferGrafico = await gerarGraficoBuffer(todosRegistros);
+    } catch (e) {
+      console.warn('[Relatório] Falha ao gerar gráfico server-side, utilizando fallback do cliente:', e.message);
+    }
+
+    // Se a geração remota falhar, utiliza como fallback o gráfico enviado pelo navegador
+    if (!bufferGrafico && chartImage) {
+      const dadosBase64 = chartImage.replace(/^data:image\/png;base64,/, '');
+      bufferGrafico = Buffer.from(dadosBase64, 'base64');
+    }
 
     const filtroCidade = cidade === 'all' ? 'Todas (RJ & SP)' : cidade.toUpperCase();
 

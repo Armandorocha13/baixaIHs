@@ -297,8 +297,8 @@ function renderCharts(dailyData, errorData, comparisonData) {
         {
           label: 'Rio de Janeiro (RJ)',
           data: rjCounts,
-          backgroundColor: '#0284c7', // Azul cerúleo
-          borderColor: '#0369a1',
+          backgroundColor: '#38bdf8', // Azul Claro
+          borderColor: '#0284c7',
           borderWidth: 1,
           borderRadius: 4,
           barPercentage: 0.8,
