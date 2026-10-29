@@ -1,0 +1,7 @@
+scratch/
+scripts_teste/
+temp/
+*.pem
+*.bak*
+.git
+pnpm*
