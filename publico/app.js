@@ -307,8 +307,8 @@ function renderCharts(dailyData, errorData, comparisonData) {
         {
           label: 'São Paulo (SP)',
           data: spCounts,
-          backgroundColor: '#ea580c', // Orange
-          borderColor: '#d97706',
+          backgroundColor: '#1e3a8a', // Azul escuro
+          borderColor: '#172554',
           borderWidth: 1,
           borderRadius: 4,
           barPercentage: 0.8,
