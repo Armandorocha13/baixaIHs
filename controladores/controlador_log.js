@@ -23,13 +23,12 @@ function aplicarFiltros(registros, query) {
       filtrados = filtrados.filter(r => r.data_execucao && r.data_execucao <= endDate);
     }
   } else {
-    // Janela padrão de 10 dias a partir do registro mais recente
-    const todasDatas = filtrados.map(r => r.data_execucao).filter(Boolean).sort();
+    // Janela padrão dos últimos 7 dias com dados a partir do registro mais recente
+    const todasDatas = [...new Set(filtrados.map(r => r.data_execucao).filter(Boolean))].sort();
     if (todasDatas.length > 0) {
-      const dataMaisRecente = todasDatas[todasDatas.length - 1];
-      const dataInicio = new Date(dataMaisRecente);
-      dataInicio.setDate(dataInicio.getDate() - 10);
-      const dataInicioISO = dataInicio.toISOString().split('T')[0];
+      const datasJanela = todasDatas.slice(-7);
+      const dataInicioISO = datasJanela[0];
+      const dataMaisRecente = datasJanela[datasJanela.length - 1];
       filtrados = filtrados.filter(r => r.data_execucao && r.data_execucao >= dataInicioISO && r.data_execucao <= dataMaisRecente);
     }
   }
@@ -49,6 +48,32 @@ function aplicarFiltros(registros, query) {
 }
 
 // ---------------------------------------------------------------------------
+// Garantia de dados carregados em ambientes Serverless (Vercel Cold Start)
+// ---------------------------------------------------------------------------
+let _promessaInicial = null;
+
+async function garantirDadosDisponiveis() {
+  if (armazenamentoDados.getRecordCount() > 0) return;
+
+  if (!_promessaInicial) {
+    _promessaInicial = (async () => {
+      try {
+        console.log('[Serverless Vercel] Memória vazia (cold start). Sincronizando dados automaticamente...');
+        const { buscarLinhasPlanilha } = require('../servicos/servico_google_sheets');
+        const linhasBrutas = await buscarLinhasPlanilha();
+        armazenamentoDados.setRecords(linhasBrutas);
+      } catch (err) {
+        console.error('[Serverless Vercel] Falha no auto-carregamento inicial:', err);
+      } finally {
+        _promessaInicial = null;
+      }
+    })();
+  }
+
+  await _promessaInicial;
+}
+
+// ---------------------------------------------------------------------------
 // Rotas de controle
 // ---------------------------------------------------------------------------
 
@@ -58,6 +83,7 @@ function aplicarFiltros(registros, query) {
  */
 async function obterLogs(req, res) {
   try {
+    await garantirDadosDisponiveis();
     const pagina = parseInt(req.query.page, 10) || 1;
     const limite = parseInt(req.query.limit, 10) || 10;
 
@@ -95,6 +121,7 @@ async function obterLogs(req, res) {
  */
 async function obterEstatisticas(req, res) {
   try {
+    await garantirDadosDisponiveis();
     const registros = armazenamentoDados.getRecords();
     const filtrados = aplicarFiltros(registros, req.query);
 

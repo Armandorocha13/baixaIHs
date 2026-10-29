@@ -12,7 +12,7 @@ const nodemailer = require('nodemailer');
  */
 async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, filtroCidade, kpis) {
   const resendApiKey = process.env.RESEND_API_KEY;
-  const urlDashboard = process.env.DASHBOARD_URL || 'https://baixaihs.onrender.com/';
+  const urlDashboard = process.env.DASHBOARD_URL || 'https://baixamodemysystem.vercel.app';
 
   const htmlEmail = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
@@ -21,9 +21,9 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
 
       <p style="font-size: 14px; color: #334155; line-height: 1.6; margin-top: 0; margin-bottom: 24px;">
         Olá,<br><br>
-        Segue o resumo diário de acompanhamento de baixas de modems da operação IHS. A planilha detalhada com a exportação da tabela analítica está disponível em anexo.<br><br>
+        Segue o resumo diário de acompanhamento de baixas de modems da operação I-SYSTEMS. A planilha detalhada com a exportação da tabela analítica está disponível em anexo.<br><br>
         Para interagir com os filtros e visualizar os dados completos, acesse o painel online:<br>
-        <a href="${urlDashboard}" style="color: #065f46; text-decoration: underline; font-weight: bold;">${urlDashboard}</a>
+        <a href="${urlDashboard}" style="color: #0284c7; text-decoration: underline; font-weight: bold;">${urlDashboard}</a>
       </p>
 
       <div style="margin-bottom: 24px;">
@@ -33,9 +33,9 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
               <span style="font-size: 10px; color: #1e40af; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase;">TOTAL DO DIA</span>
               <span style="font-size: 22px; color: #1e3a8a; font-weight: bold;">${kpis.total}</span>
             </td>
-            <td style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 16px; text-align: center; width: 33.3%;">
-              <span style="font-size: 10px; color: #065f46; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase;">SUCESSOS DO DIA</span>
-              <span style="font-size: 22px; color: #0f5132; font-weight: bold;">${kpis.sucessos}</span>
+            <td style="background-color: #e0f2fe; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; text-align: center; width: 33.3%;">
+              <span style="font-size: 10px; color: #0284c7; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase;">SUCESSOS DO DIA</span>
+              <span style="font-size: 22px; color: #0369a1; font-weight: bold;">${kpis.sucessos}</span>
             </td>
             <td style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 16px; text-align: center; width: 33.3%;">
               <span style="font-size: 10px; color: #6b21a8; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase;">TAXA DO DIA</span>
@@ -45,13 +45,12 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
         </table>
       </div>
 
-      <h3 style="color: #334155; font-size: 14px; margin-bottom: 12px; font-weight: bold;">Comparativo Diário de Importações: RJ × SP</h3>
       <div style="text-align: center; margin-bottom: 24px; border: 1px solid #f1f5f9; padding: 12px; border-radius: 8px; background-color: #ffffff;">
-        <img src="cid:comparisonChart" style="width: 100%; max-width: 550px; height: auto; display: block; margin: 0 auto;" />
+        <img src="cid:comparisonChart" style="width: 100%; max-width: 680px; height: auto; display: block; margin: 0 auto;" />
       </div>
 
       <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 12px; text-align: center; margin-top: 24px;">
-        Gerado automaticamente pelo Painel de Acompanhamento de Baixas IHS.
+        Gerado automaticamente pelo Painel de Acompanhamento de Baixas I-SYSTEMS.
       </div>
     </div>
   `;
@@ -70,7 +69,7 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
         contentId: 'comparisonChart'
       },
       {
-        filename: `relatorio_baixas_IHS_${new Date().toISOString().split('T')[0]}.xlsx`,
+        filename: `relatorio_baixas_ISYSTEMS_${new Date().toISOString().split('T')[0]}.xlsx`,
         content: bufferExcel.toString('base64')
       }
     ];
@@ -82,7 +81,7 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: `Painel IHS <${deEmail}>`,
+        from: `Painel I-SYSTEMS <${deEmail}>`,
         to: listaTo,
         subject: `Relatório de Logs de Consumo - MODEM [${filtroCidade}]`,
         html: htmlEmail,
@@ -112,9 +111,9 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
     port: 465,
     secure: true,
     family: 4,
-    connectionTimeout: 10000, // 10 segundos
-    greetingTimeout: 10000,   // 10 segundos
-    socketTimeout: 10000,     // 10 segundos
+    connectionTimeout: 30000, // 30 segundos
+    greetingTimeout: 30000,   // 30 segundos
+    socketTimeout: 120000,    // 120 segundos (anexo de ~0,5 MB em rede lenta)
     auth: {
       user: usuarioEmail,
       pass: senhaEmail
@@ -131,19 +130,34 @@ async function enviarRelatorioEmail(destinatarios, bufferGrafico, bufferExcel, f
       cid: 'comparisonChart'
     },
     {
-      filename: `relatorio_baixas_IHS_${new Date().toISOString().split('T')[0]}.xlsx`,
+      filename: `relatorio_baixas_ISYSTEMS_${new Date().toISOString().split('T')[0]}.xlsx`,
       content: bufferExcel,
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     }
   ];
 
-  await transportador.sendMail({
-    from: `"Painel IHS" <${usuarioEmail}>`,
+  const mensagem = {
+    from: `"Painel I-SYSTEMS" <${usuarioEmail}>`,
     to: destinatarios.replace(/;/g, ','),
     subject: `Relatório de Logs de Consumo - MODEM [${filtroCidade}]`,
     html: htmlEmail,
     attachments: anexos
-  });
+  };
+
+  // Até 3 tentativas (falhas de rede/timeout são intermitentes)
+  let ultimoErro;
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      await transportador.sendMail(mensagem);
+      console.log('[E-mail] Enviado via SMTP (tentativa ' + tentativa + ').');
+      return;
+    } catch (err) {
+      ultimoErro = err;
+      console.log('[E-mail] Tentativa ' + tentativa + '/3 falhou: ' + (err.code || '') + ' ' + err.message);
+      if (tentativa < 3) await new Promise(r => setTimeout(r, 4000));
+    }
+  }
+  throw ultimoErro;
 }
 
 module.exports = { enviarRelatorioEmail };

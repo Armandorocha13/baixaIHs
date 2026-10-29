@@ -33,6 +33,15 @@ app.get('/logoIhs.png', (req, res) => {
   }
 });
 
+app.get('/isystems.png', (req, res) => {
+  const logoPath = path.join(__dirname, 'isystems.png');
+  if (fs.existsSync(logoPath)) {
+    res.sendFile(logoPath);
+  } else {
+    res.status(404).send('Logo não encontrado');
+  }
+});
+
 // Vincular Rotas HTTP
 app.use('/api', rotasApi);
 
@@ -43,7 +52,7 @@ app.get(/.*/, (req, res) => {
 
 // --- Agendador de Sincronismo Automático ---
 function inicializarAgendadorSincronismo() {
-  const intervaloMinutos = parseInt(process.env.SYNC_INTERVAL_MINUTES, 10) || 30;
+  const intervaloMinutos = parseInt(process.env.SYNC_INTERVAL_MINUTES, 10) || 5;
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 
   if (!spreadsheetId) {
@@ -58,7 +67,7 @@ function inicializarAgendadorSincronismo() {
   setTimeout(async () => {
     const { executarSincronismoAgendado } = require('./controladores/controlador_log');
     await executarSincronismoAgendado();
-  }, 10_000);
+  }, 500);
 
   // Executa o sincronismo de tempos em tempos
   setInterval(async () => {
@@ -82,4 +91,9 @@ function iniciar() {
   }
 }
 
-iniciar();
+// Executa o servidor HTTP apenas quando executado diretamente (fora do ambiente Serverless da Vercel)
+if (require.main === module || !process.env.VERCEL) {
+  iniciar();
+}
+
+module.exports = app;

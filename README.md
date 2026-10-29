@@ -62,7 +62,7 @@ Para o correto funcionamento do sistema, copie o arquivo de credenciais da conta
 EMAIL_USER=usuario@provedor.com
 EMAIL_PASS=senha_autenticacao
 EMAIL_RECIPIENT=destinatario@provedor.com
-DASHBOARD_URL=https://baixaihs.onrender.com/
+DASHBOARD_URL=https://baixamodemysystem.vercel.app
 
 # ========================================
 # Configurações da Google Sheets API

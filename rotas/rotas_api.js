@@ -7,6 +7,7 @@ const roteador = express.Router();
 // Definição das rotas e vinculação com os métodos do controlador
 roteador.get('/logs', controladorLog.obterLogs);
 roteador.get('/stats', controladorLog.obterEstatisticas);
+roteador.get('/sync', controladorLog.sincronizarPlanilha); // Suporte para Vercel Cron
 roteador.post('/sync', controladorLog.sincronizarPlanilha);
 roteador.get('/sync-status', controladorLog.obterStatusSincronismo);
 roteador.post('/send-report', controladorRelatorio.enviarRelatorio);

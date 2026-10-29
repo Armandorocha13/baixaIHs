@@ -39,6 +39,10 @@ const elPaginationControls = document.getElementById('pagination-controls');
 
 const elLoadingOverlay = document.getElementById('loading-overlay');
 const elLoadingOverlayText = document.getElementById('loading-overlay-text');
+const elSyncPercentText = document.getElementById('sync-percent-text');
+const elSyncProgressBar = document.getElementById('sync-progress-bar');
+const elSyncStatusDetail = document.getElementById('sync-status-detail');
+const elSyncTimeLabel = document.getElementById('sync-time-label');
 
 // Debounce helper for search input
 let searchTimeout;
@@ -167,8 +171,8 @@ function renderCharts(dailyData, errorData, comparisonData) {
         {
           label: 'Sucesso',
           data: successes,
-          borderColor: '#065f46', // Dark green
-          backgroundColor: 'rgba(6, 95, 70, 0.05)',
+          borderColor: '#0284c7', // Azul cerúleo
+          backgroundColor: 'rgba(2, 132, 199, 0.08)',
           borderWidth: 2.5,
           tension: 0.35,
           pointRadius: 3,
@@ -293,8 +297,8 @@ function renderCharts(dailyData, errorData, comparisonData) {
         {
           label: 'Rio de Janeiro (RJ)',
           data: rjCounts,
-          backgroundColor: '#065f46', // Dark green
-          borderColor: '#047857',
+          backgroundColor: '#0284c7', // Azul cerúleo
+          borderColor: '#0369a1',
           borderWidth: 1,
           borderRadius: 4,
           barPercentage: 0.8,
@@ -491,33 +495,9 @@ function setupEventListeners() {
     refreshDashboard();
   });
 
-  // 5. Sync from Google Sheets (replaces file upload)
+  // 5. Sincronização com Google Sheets (sem alert)
   elBtnSyncSheets.addEventListener('click', async () => {
-    // Show loading overlay
-    elLoadingOverlayText.innerText = 'Sincronizando dados com o Google Sheets...';
-    elLoadingOverlay.style.display = 'flex';
-
-    try {
-      const response = await fetch(`${API_BASE}/api/sync`, {
-        method: 'POST'
-      });
-
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.error || 'Erro ao sincronizar com Google Sheets.');
-
-      alert(`✅ ${resData.message}`);
-      
-      // Reset page to 1 and reload everything
-      state.page = 1;
-      await refreshDashboard();
-
-    } catch (err) {
-      console.error(err);
-      alert(`Falha na sincronização: ${err.message}`);
-    } finally {
-      // Hide loading
-      elLoadingOverlay.style.display = 'none';
-    }
+    await executarSincronizacao({ silencioso: false });
   });
 
   // 6. Export CSV of current query results (all pages matching current filter)
@@ -544,7 +524,7 @@ function setupEventListeners() {
       const records = result.data;
 
       if (records.length === 0) {
-        alert('Nenhum registro para exportar.');
+        showToast('Nenhum registro para exportar.', 'warning');
         return;
       }
 
@@ -562,7 +542,7 @@ function setupEventListeners() {
 
     } catch (err) {
       elLoadingOverlay.style.display = 'none';
-      alert(`Erro ao exportar arquivo: ${err.message}`);
+      showToast(`Erro ao exportar arquivo: ${err.message}`, 'error');
     }
   });
 
@@ -573,7 +553,7 @@ function setupEventListeners() {
     if (state.comparisonChart) {
       chartImage = state.comparisonChart.toBase64Image();
     } else {
-      alert('Erro: O gráfico comparativo não está renderizado.');
+      showToast('O gráfico comparativo não está renderizado.', 'warning');
       return;
     }
 
@@ -621,10 +601,10 @@ function setupEventListeners() {
       const resData = await response.json();
       if (!response.ok) throw new Error(resData.error || 'Erro ao enviar o e-mail.');
 
-      alert('Relatório de teste enviado com sucesso!');
+      showToast('Relatório de teste enviado com sucesso!', 'success');
     } catch (err) {
       console.error(err);
-      alert(`Falha ao enviar e-mail: ${err.message}`);
+      showToast(`Falha ao enviar e-mail: ${err.message}`, 'error');
     } finally {
       elLoadingOverlay.style.display = 'none';
     }
@@ -655,8 +635,172 @@ function buildCSVContent(records) {
   return '\ufeff' + csvRows.join('\n');
 }
 
-// Initializer
-document.addEventListener('DOMContentLoaded', () => {
+// Helper Toast Notification (substitui os alerts nativos do navegador)
+function showToast(mensagem, tipo = 'info') {
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  const corBg = tipo === 'error' ? '#ef4444' : (tipo === 'success' ? '#0284c7' : '#1e293b');
+  toast.style.cssText = 'background-color: ' + corBg + '; color: #ffffff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.15); opacity: 0; transform: translateY(10px); transition: all 0.25s ease; pointer-events: auto;';
+  toast.innerText = mensagem;
+  toastContainer.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// --- Rotina de Atualização Automática e Sincronização com Progresso ---
+let isSyncing = false;
+
+async function refreshDashboardSilently() {
+  try {
+    const [statsData, logsData] = await Promise.all([
+      fetchStats(),
+      fetchLogs()
+    ]);
+
+    if (statsData) {
+      renderKPIs(statsData.kpis, statsData.dailyEvolution);
+      renderCharts(statsData.dailyEvolution, statsData.errorReasons, statsData.rjSpComparison);
+    }
+
+    if (logsData) {
+      state.totalRecords = logsData.total;
+      state.totalPages = Math.ceil(logsData.total / state.limit);
+      renderTable(logsData.data, logsData.total);
+    }
+
+    atualizarLabelUltimaSincronizacao();
+  } catch (e) {
+    console.error('Erro na atualização silenciosa:', e);
+  }
+}
+
+function atualizarLabelUltimaSincronizacao() {
+  if (elSyncTimeLabel) {
+    const agora = new Date();
+    const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    elSyncTimeLabel.innerText = 'Atualizado automaticamente às ' + hora;
+  }
+}
+
+async function executarSincronizacao({ silencioso = false } = {}) {
+  if (isSyncing) return;
+  isSyncing = true;
+
+  let progressInterval = null;
+  let currentProgress = 0;
+
+  function setProgress(pct, detailText) {
+    currentProgress = pct;
+    if (elSyncProgressBar) elSyncProgressBar.style.width = pct + '%';
+    if (elSyncPercentText) elSyncPercentText.innerText = Math.round(pct) + '%';
+    if (detailText && elSyncStatusDetail) elSyncStatusDetail.innerText = detailText;
+  }
+
+  if (!silencioso && elLoadingOverlay) {
+    setProgress(0, 'Conectando ao Google Sheets...');
+    if (elLoadingOverlayText) elLoadingOverlayText.innerText = 'Sincronizando dados com o Google Sheets';
+    if (elSyncProgressBar) elSyncProgressBar.style.backgroundColor = '';
+    elLoadingOverlay.style.display = 'flex';
+
+    // Etapas simuladas fluidas enquanto o backend responde
+    const steps = [
+      { target: 20, detail: 'Autenticando via Service Account...', delay: 200 },
+      { target: 45, detail: 'Lendo abas BAIXA e BAIXA CONNECT...', delay: 600 },
+      { target: 75, detail: 'Consolidando registros de RJ e SP...', delay: 1200 },
+      { target: 90, detail: 'Atualizando indicadores e comparativos...', delay: 1800 }
+    ];
+
+    let stepIdx = 0;
+    progressInterval = setInterval(() => {
+      if (stepIdx < steps.length) {
+        const s = steps[stepIdx];
+        if (currentProgress < s.target) {
+          setProgress(Math.min(currentProgress + 2, s.target), s.detail);
+        } else {
+          stepIdx++;
+        }
+      } else if (currentProgress < 94) {
+        setProgress(currentProgress + 0.5);
+      }
+    }, 80);
+  }
+
+  try {
+    const response = await fetch(API_BASE + '/api/sync', { method: 'POST' });
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || 'Erro ao sincronizar com Google Sheets.');
+
+    if (!silencioso && elLoadingOverlay) {
+      if (progressInterval) clearInterval(progressInterval);
+      setProgress(100, 'Concluído: ' + formatNumber(resData.importedCount || 0) + ' registros importados!');
+      
+      // Pausa suave para visualização do 100%
+      await new Promise(resolve => setTimeout(resolve, 600));
+      elLoadingOverlay.style.display = 'none';
+    }
+
+    atualizarLabelUltimaSincronizacao();
+
+    // Recarrega o dashboard
+    state.page = 1;
+    await refreshDashboard();
+
+  } catch (err) {
+    console.error('[Sincronismo]', err);
+    if (!silencioso && elLoadingOverlay) {
+      if (progressInterval) clearInterval(progressInterval);
+      setProgress(currentProgress, 'Erro: ' + err.message);
+      if (elSyncProgressBar) elSyncProgressBar.style.backgroundColor = '#ef4444';
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      elLoadingOverlay.style.display = 'none';
+    }
+  } finally {
+    isSyncing = false;
+    if (progressInterval) clearInterval(progressInterval);
+  }
+}
+
+// Initializer com Atualização Automática Contínua
+document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
-  refreshDashboard();
+
+  // 1. Carregamento inicial do dashboard
+  await refreshDashboard();
+
+  // 2. Se a base de dados em memória estiver vazia no primeiro carregamento, sincroniza automaticamente com modal
+  if (state.totalRecords === 0) {
+    console.log('[Auto-Init] Base vazia no boot, disparando sincronização inicial...');
+    await executarSincronizacao({ silencioso: false });
+  }
+
+  // 3. Atualização automática dos gráficos e tabela a cada 30 segundos (sem travar a tela)
+  setInterval(() => {
+    refreshDashboardSilently();
+  }, 30_000);
+
+  // 4. Sincronização automática em segundo plano com o Google Sheets a cada 3 minutos
+  setInterval(() => {
+    executarSincronizacao({ silencioso: true });
+  }, 3 * 60_000);
+
+  // 5. Ao retornar o foco para a aba do navegador, atualiza automaticamente
+  window.addEventListener('focus', () => {
+    refreshDashboardSilently();
+  });
 });

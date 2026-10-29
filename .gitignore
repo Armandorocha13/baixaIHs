@@ -12,3 +12,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+
+.vercel
+
+*.bak*
+pnpm-lock.yaml
+pnpm-workspace.yaml

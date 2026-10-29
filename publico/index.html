@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Logs de Consumo</title>
+  <title> </title>
   <link rel="icon" type="image/png" href="/logo.png">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,18 +16,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <div class="container">
-    
+
     <!-- HEADER BAR -->
     <header class="dashboard-header card">
-      <div class="header-logo-section">
-        <img src="/logo.png" alt="FFA Logo" class="logo-ffa">
-        <span class="logo-separator">/</span>
-        <img src="/logoIhs.png" alt="IHS Logo" class="logo-ihs">
+      <div class="header-left-section">
+        <div class="header-logo-section">
+          <img src="/logo.png" alt="FFA Logo" class="logo-ffa">
+          <span class="logo-separator">/</span>
+          <img src="/isystems.png" alt="Y-SYSTEM Logo" class="logo-isystems">
+        </div>
+
       </div>
-      <h1 class="header-title">DASHBOARD DE LOGS DE CONSUMO</h1>
+      <div class="header-right-section">
+        <div class="auto-sync-badge" id="auto-sync-indicator" title="O painel atualiza as informações automaticamente">
+          <span class="pulse-dot"></span>
+          <span class="sync-time-label" id="sync-time-label"> </span>
+        </div>
+      </div>
     </header>
 
     <!-- FILTER BAR -->
@@ -58,7 +68,8 @@
         <label for="search-input" class="filter-label">BUSCAR REGISTRO</label>
         <div class="input-search-wrapper">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="search-input" class="input-search" placeholder="Buscar por OS, Matrícula, Material ou Serial...">
+          <input type="text" id="search-input" class="input-search"
+            placeholder="Buscar por OS, Matrícula, Material ou Serial...">
         </div>
       </div>
 
@@ -186,14 +197,33 @@
   </div>
 
   <!-- LOADING OVERLAY -->
+  <!-- LOADING OVERLAY COM LOGOS ALTERNADAS E BARRA DE PROGRESSO COM PORCENTAGEM -->
   <div class="loading-overlay" id="loading-overlay">
-    <div class="spinner-wrapper">
-      <div class="loading-spinner"></div>
-      <p class="loading-text" id="loading-overlay-text">Sincronizando dados...</p>
+    <div class="sync-modal card">
+      <!-- Palco das logos alternadas (FFA e Y-SYSTEM) -->
+      <div class="sync-logo-stage">
+        <img src="/logo.png" alt="FFA Logo" class="sync-logo sync-logo-ffa" id="sync-logo-ffa">
+        <img src="/isystems.png" alt="Y-SYSTEM Logo" class="sync-logo sync-logo-isystems" id="sync-logo-isystems">
+      </div>
+
+      <!-- Cabeçalho de progresso: Título e Porcentagem -->
+      <div class="sync-progress-header">
+        <span class="sync-title" id="loading-overlay-text">Sincronizando com Google Sheets</span>
+        <span class="sync-percent" id="sync-percent-text">0%</span>
+      </div>
+
+      <!-- Barra de carregamento fina -->
+      <div class="sync-progress-track">
+        <div class="sync-progress-fill" id="sync-progress-bar"></div>
+      </div>
+
+      <!-- Detalhe da etapa -->
+      <p class="sync-detail" id="sync-status-detail">Conectando aos servidores...</p>
     </div>
   </div>
 
   <!-- Script logic -->
   <script src="app.js"></script>
 </body>
+
 </html>

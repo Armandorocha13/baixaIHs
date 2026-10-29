@@ -19,9 +19,9 @@
   --secondary: #64748b;
   
   /* Accent Colors */
-  --green-bg: #ecfdf5;
-  --green-text: #059669;
-  --green-border: #a7f3d0;
+  --green-bg: #e0f2fe;
+  --green-text: #0284c7;
+  --green-border: #bae6fd;
   
   --red-bg: #fef2f2;
   --red-text: #dc2626;
@@ -115,8 +115,10 @@ body {
   font-weight: 300;
 }
 
-.logo-ihs {
-  height: 38px;
+.logo-ihs,
+.logo-isystems {
+  height: 32px;
+  max-width: 220px;
   object-fit: contain;
 }
 
@@ -555,7 +557,7 @@ body {
   padding: 0 8px;
 }
 
-/* Loading Overlay */
+/* Loading Overlay com Logos Alternadas e Barra Fina */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -563,41 +565,159 @@ body {
   width: 100vw;
   height: 100vh;
   background-color: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   z-index: 9999;
   display: none;
   align-items: center;
   justify-content: center;
 }
 
-.spinner-wrapper {
+.sync-modal {
+  background-color: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 32px 36px;
+  width: 90%;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  background-color: #ffffff;
-  padding: 32px 48px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+@keyframes modalPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.loading-text {
-  font-size: 14px;
-  font-weight: 600;
+/* Palco das logos alternadas */
+.sync-logo-stage {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.sync-logo {
+  position: absolute;
+  object-fit: contain;
+  transition: opacity 0.5s ease-in-out, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sync-logo-ffa {
+  height: 52px;
+  max-width: 100px;
+  animation: alternateFFA 3s infinite ease-in-out;
+}
+
+.sync-logo-isystems {
+  height: 38px;
+  max-width: 240px;
+  animation: alternateISystems 3s infinite ease-in-out;
+}
+
+@keyframes alternateFFA {
+  0%, 45% {
+    opacity: 1;
+    transform: scale(1);
+    }
+  50%, 95% {
+    opacity: 0;
+    transform: scale(0.92);
+    }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    }
+}
+
+@keyframes alternateISystems {
+  0%, 45% {
+    opacity: 0;
+    transform: scale(0.92);
+    }
+  50%, 95% {
+    opacity: 1;
+    transform: scale(1);
+    }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+    }
+}
+
+/* Linha com Título e Porcentagem */
+.sync-progress-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sync-title {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-main);
+  letter-spacing: 0.3px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.sync-percent {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0284c7;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barra de progresso fina */
+.sync-progress-track {
+  width: 100%;
+  height: 5px; /* Barra fina */
+  background-color: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sync-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #38bdf8, #0284c7);
+  border-radius: 999px;
+  transition: width 0.2s ease-out;
+  position: relative;
+}
+
+.sync-progress-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: progressGleam 1.5s infinite;
+}
+
+@keyframes progressGleam {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.sync-detail {
+  width: 100%;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: left;
+}
 }
 
 .text-center { text-align: center; }

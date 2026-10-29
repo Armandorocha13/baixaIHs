@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "servidor.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "publico/**",
+          "isystems.png",
+          "logo.png",
+          "logoIhs.png",
+          "Acompanhamento de baixa - MODENS IHS.xlsx"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "servidor.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/sync",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}
